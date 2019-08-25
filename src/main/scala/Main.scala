@@ -51,19 +51,5 @@ object Main {
   def main(args: Array[String]) {
     runAnimation("Frogs and Toads", PuzzleState.animate(5, 8))
 
-    // PLACE HOLDER FOR TESTING DRAWING
-    val rect = Image.rectangle(100,100).fillColor(Color.black).strokeColor(Color.black).strokeWidth(4)
-    val circc = Image.circle(100).fillColor(Color.red).strokeColor(Color.black).strokeWidth(2)
-    //
-    // PLACE HOLDER FOR DRAWING A LINE OF CIRCLES
-      def loop (count : Int, img : Image) : Image = {
-        count match {
-          case 0 => Image.empty
-          case x => img beside loop(x-1, img)
-        }
-      }
-      val sq_anim = Seq(loop(5,circc) beside loop(5, rect))
-      runAnimation("Square", sq_anim)
-    //
   }
 }

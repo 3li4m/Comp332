@@ -14,7 +14,10 @@ import doodle.core._
 import doodle.syntax._
 import doodle.image._
 import doodle.image.Image._
+import org.mq.frogsandtoads
 import org.mq.frogsandtoads.Main.runAnimation
+
+import scala.collection.immutable
 
 /**
   * A puzzle state is given as a 1-dimensional array of cell values.
@@ -39,8 +42,10 @@ class PuzzleState private (board: Vector[PuzzleState.Cell], loc: Int) {
   }
 
   // FIXME you might want to add more methods here.
-  
- 
+  def getBoardState(): Vector[PuzzleState.Cell] ={
+    board
+  }
+
 }
 
 /**
@@ -80,6 +85,11 @@ object PuzzleState {
     )
   }
 
+  def customApply (vector: Vector[PuzzleState.Cell]): PuzzleState ={
+    new PuzzleState(vector,vector.indexWhere(x => x == Empty))
+  }
+
+
   /**
     * Find a sequence of legal moves of the frogs and toads puzzle from a specified starting
     * [[PuzzleState]] to the terminal [[PuzzleState]].
@@ -88,12 +98,46 @@ object PuzzleState {
     * @return the sequence of [[PuzzleState]] objects passed through in the transit from
     * state `start` to the terminal state (inclusive). Returns the empty sequence if no solution
     * is found.
+    *
+    *
+    *
+    *
+    * If the state start is actually the terminal state of the game then declare success and return.
+    * Otherwise, for each move that is possible from state start, do the following:
+    *
+    * make that move to give a new state which we call next,
+    *
+    * make a recursive call solve(next) to try to find a solution to the problem starting from position next,
+    *
+    * if that call was successful then declare success and return,
+    *
+    * If none of the possible moves tried resulted in success then declare failure and return.
     */
   def solve(start: PuzzleState): Seq[PuzzleState] = {
     // FIXME add your frogs and toads solver code here.
-    Seq()
-
+    var next: PuzzleState = start
+    /*if (start.isTerminalState()) {
+      println("Success")
+      Seq(start)
+    }
+    if (!frogCanSlide(start) && !frogCanJump(start) && !toadCanSlide(start) && !toadCanJump(start)) {
+      println("Fail")
+      Seq(Nil)
+    }
+    if (frogCanJump(start) || frogCanJump(start))
+    {
+       next = frogMovement(start)
+    }
+    else if (toadCanSlide(start) || toadCanJump(start))
+    {
+      next = toadMovement(start)
+    }
+    solve(next)
+    Seq(next)
+    */
+    Seq(start) ++ Seq(frogMovement(start)) ++ Seq(toadMovement(frogMovement(start)))
   }
+
 
   /**
     * Call [[solve]] to generate a sequence of legal moves from a specified
@@ -106,12 +150,19 @@ object PuzzleState {
     */
   def animate(start: PuzzleState): Seq[Image] = {
     // FIXME add your code here to generate the animation frame sequence.
-    val rect = Image.rectangle(start.size * 40,100).fillColor(Color.black).strokeColor(Color.black).strokeWidth(4)
-    Seq()
-    //Seq(solve(start) on rect)
+    val background = Image.rectangle(start.size * 32, start.size * 4).fillColor(Color.black).strokeColor(Color.black).strokeWidth(4)
+    println(drawBoardState(solve(start).head.getBoardState().toList))
+    println(start.size)
+    elHelpo(solve(start),background)
   }
 
-
+  // best helper function ever
+  def elHelpo(start: Seq[PuzzleState], background: Image): Seq[Image]={
+    start match {
+      case Nil => Nil
+      case h::t => Seq(drawBoardState(h.getBoardState().toList) on background) ++ elHelpo(t, background)
+    }
+  }
 
   /**
     * Create an animation of a solution to the frogs and toads puzzle, starting from the initial
@@ -124,12 +175,91 @@ object PuzzleState {
     animate(PuzzleState(frogs, toads))
 
 
-
-  def renderCell(c : Cell): Image =
-    c match {
-      case Frog => circle(25) fillColor Color.red
-      case Toad => circle(25) fillColor Color.green
-      case Empty => circle(25) fillColor Color.white
+  //place inside antoher function called cellsToDraw which is passed a list of puzzelstate cells
+  // and returns an image
+  // draw  + drawBoardState THIS IS WRONG
+  // draw beside or above for image
+  def drawBoardState(board: List[Cell]): Image={
+    def drawCells(cell : Cell): Image =
+      cell match {
+        case Frog => square(30).fillColor(Color.red)
+        case Empty => square(30).fillColor(Color.white)
+        case Toad => square(30).fillColor(Color.green)
+      }
+    board match {
+      case Nil => empty
+      case h::t =>  drawCells(h) beside drawBoardState(t)
     }
+  }
+
+  def frogCanSlide(start: PuzzleState): Boolean={
+    val emptyIndex = start.emptyLoc
+    val boardState = start.getBoardState()
+    if (emptyIndex > 0 && boardState(emptyIndex - 1) == Frog && boardState(emptyIndex + 1) != Frog){true} else false
+  }
+  def frogCanJump(start: PuzzleState): Boolean={
+    val emptyIndex = start.emptyLoc
+    val boardState = start.getBoardState()
+    if ((emptyIndex + 1) < start.size && emptyIndex > 0 && boardState(emptyIndex - 2) == Frog && boardState(emptyIndex - 1) == Toad){true} else false
+  }
+
+  def frogMovement(start: PuzzleState): PuzzleState = {
+    val emptyIndex = start.emptyLoc
+    val boardState = start.getBoardState()
+
+    if (frogCanSlide(start)) {
+      new PuzzleState(
+        boardState.take(emptyIndex - 1) ++
+          Vector(boardState(emptyIndex)) ++
+          Vector(boardState(emptyIndex - 1)) ++
+          boardState.drop(emptyIndex + 1),emptyIndex - 1)
+    }
+    else if(frogCanJump(start)) {
+      new PuzzleState(
+        boardState.take(emptyIndex - 2) ++
+          Vector(boardState(emptyIndex )) ++
+          Vector(boardState(emptyIndex - 1)) ++
+          Vector(boardState(emptyIndex + 1)) ++ boardState.drop(emptyIndex + 1),emptyIndex-2)
+    }
+   else {
+      start
+    }
+  }
+
+  def toadCanSlide(start: PuzzleState): Boolean={
+    val emptyIndex = start.emptyLoc
+    val boardState = start.getBoardState()
+    if (emptyIndex > 0 && boardState(emptyIndex + 1) == Toad){true} else false
+  }
+  def toadCanJump(start: PuzzleState): Boolean={
+    val emptyIndex = start.emptyLoc
+    val boardState = start.getBoardState()
+    if ((emptyIndex + 1) < start.size && emptyIndex > 0 && boardState(emptyIndex + 2) == Toad && boardState(emptyIndex + 1) == Frog){true} else false
+  }
+
+  def toadMovement(start: PuzzleState): PuzzleState = {
+    val emptyIndex = start.emptyLoc
+    val boardState = start.getBoardState()
+
+    if (toadCanSlide(start)) {
+      new PuzzleState(
+        boardState.take(emptyIndex) ++
+          Vector(boardState(emptyIndex + 1)) ++
+          Vector(boardState(emptyIndex)) ++
+          boardState.drop(emptyIndex + 2),emptyIndex + 1)
+    }
+    else if (toadCanJump(start)) {
+      new PuzzleState(
+        boardState.take(emptyIndex) ++
+          Vector(boardState(emptyIndex + 2)) ++
+          Vector(boardState(emptyIndex + 1)) ++
+          Vector(boardState(emptyIndex)) ++
+          boardState.drop(emptyIndex + 3),emptyIndex + 2)
+    }
+    else{
+      start
+    }
+  }
+
 }
 
