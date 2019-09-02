@@ -45,63 +45,52 @@ class FrogsAndToadsTests extends FlatSpec with Matchers {
     assert(!PuzzleState(5, 8).isTerminalState())
   }
 
-  it should "complete successfully in terminal state" in {
-    val a = customApply(Vector(Toad,Toad,Empty,Frog,Frog))
-    println(solve(a))
-  }
-
   //TEST If toad can slide into a cell
   it should "Frog should be able to slide" in {
     val a = customApply(Vector(Frog,Frog,Empty,Toad,Frog))
-    println(s"Calling method Slide frog")
-    println(frogMovement(a).getBoardState())
-    assertResult(Vector(Frog,Empty,Frog,Toad,Frog))(frogMovement(a).getBoardState())
+    assertResult(Vector(Frog,Empty,Frog,Toad,Frog))(frogSlide(a).getBoardState())
   }
 
   //TEST If frog can jump into a cell
   it should "Frog should be able to jump" in {
-    val a = customApply(Vector(Frog,Frog,Frog,Frog,Toad,Empty,Frog,Toad,Toad,Frog))
-    println(s"Calling method Jump frog")
-    assertResult(Vector(Frog,Frog,Frog,Empty,Toad,Frog,Frog,Toad,Toad,Frog))(frogMovement(a).getBoardState())
-    println(frogMovement(a).getBoardState())
-  }
-
-  //TEST If the frog can slide over another cell
-  it should "Frog should not slide over toad" in {
-    val a = customApply(Vector(Frog,Frog,Toad,Empty,Frog))
-    assertResult(false)(frogCanSlide(a))
-  }
-  //TEST If the frog can jump over another cell
-  it should "Frog should not be able to jump" in {
-    val a = customApply(Vector(Frog,Frog,Empty,Toad,Frog))
-    assertResult(false)(frogCanJump(a))
+    val a = customApply(Vector(Frog,Frog,Toad,Empty,Toad))
+    assertResult(Vector(Frog,Empty,Toad,Frog,Toad))(frogJump(a).getBoardState())
   }
 
   //TEST If toad can slide into empty cell
   it should "Toad should be able to slide" in {
     val a = customApply(Vector(Frog,Empty,Toad))
-    println(s"Calling method slide toad")
-    println(toadMovement(customApply(Vector(Frog,Empty,Toad))).getBoardState())
-    assertResult(Vector(Frog,Toad,Empty))(toadMovement(a).getBoardState())
+    assertResult(Vector(Frog,Toad,Empty))(toadSlide(a).getBoardState())
   }
 
   //TEST If toad can jump into a cell
   it should "Toad should be able to jump" in {
     val a = customApply(Vector(Frog,Empty,Frog,Toad))
-    println(s"Calling method Jump toad")
-    println(toadMovement(customApply(Vector(Frog,Empty,Frog,Toad))).getBoardState())
-    assertResult(Vector(Frog,Toad,Frog,Empty))(toadMovement(a).getBoardState())
+    assertResult(Vector(Frog,Toad,Frog,Empty))(toadJump(a).getBoardState())
   }
 
-  //TEST If the toad can slide over another cell
-  it should "Toad should not slide over toad" in {
-    val a = customApply(Vector(Toad,Empty,Frog,Toad,Toad))
-    assertResult(false)(toadCanSlide(a))
+  //TEST If the frog is unable to slide
+  it should "Frog should not slide over toad" in {
+    val a = customApply(Vector(Frog,Frog,Toad,Empty,Frog))
+    assertResult(a.getBoardState())(frogSlide(a).getBoardState())
   }
-  //TEST If the toad can jump over another cell
+
+  //TEST If the frog can jump over another frog
+  it should "Frog should not be able to jump" in {
+    val a = customApply(Vector(Frog,Frog,Empty,Toad,Frog))
+    assertResult(a.getBoardState())(frogJump(a).getBoardState())
+  }
+
+  //TEST If toad is unable to slide
+  it should "Toad should not be able to slide" in {
+    val a = customApply(Vector(Toad,Empty,Frog,Toad,Toad))
+    assertResult(a.getBoardState())(toadSlide(a).getBoardState())
+  }
+
+  //TEST If the toad can jump over another toad
   it should "Toad should not be able to jump" in {
     val a = customApply(Vector(Frog,Frog,Empty,Toad,Toad))
-    assertResult(false)(toadCanJump(a))
+    assertResult(a.getBoardState())(toadJump(a).getBoardState())
   }
 
 }
